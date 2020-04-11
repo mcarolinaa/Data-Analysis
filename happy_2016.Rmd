@@ -1,6 +1,5 @@
 ---
 title: "World Happiness report 2016"
-author: "Maria Carolina da S. Andrea"
 date: "9 de abril de 2020"
 output: html_document
 ---
@@ -15,6 +14,7 @@ I obtained this from Kaggle website: https://www.kaggle.com/unsdsn/world-happine
 This data refers to the year of 2016.
 Details about the data, what it represents can be obtained in Kaggle's webpage.
 
+Downloaded the data --> named "h_2016.csv" in my own directory.
 
 <br></br>
 
