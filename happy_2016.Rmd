@@ -1,0 +1,445 @@
+---
+title: "World Happiness report 2016"
+author: "Maria Carolina da S. Andrea"
+date: "9 de abril de 2020"
+output: html_document
+---
+
+<br></br>
+
+#### Happiness rank and scores by country, 2016.
+
+This data is the World Happiness Report.
+I obtained this from Kaggle website: https://www.kaggle.com/unsdsn/world-happiness
+
+This data refers to the year of 2016.
+Details about the data, what it represents can be obtained in Kaggle's webpage.
+
+
+<br></br>
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+
+# importing data, renaming columns
+
+library(tidyverse)
+
+h_2016 <- read.csv("h_2016.csv", header = TRUE)
+
+head(h_2016)
+
+colnames(h_2016) <- c('Country', 'Region', 'H_Rank', 'H_Score',
+                      'LCI', 'UCI', 'Gdp_pc', 'Family', 'Life_ex',
+                      'Freedom', 'Corrup_ppt', 'Generosity', 'Dystopia_res')
+
+# Normalize the scores
+
+library(caret)
+
+
+h_2016_norm <-
+    h_2016 %>%
+    mutate_at(scale, .vars = vars(-c(1:6,13)))
+
+head(h_2016_norm)
+
+
+# check correlations
+
+cor_1 <- cor(h_2016_norm[,-c(1,2)])
+
+
+cor_2 <- cor(h_2016_norm[,-c(1,2,3,5,6)])
+cor_2
+
+```
+
+<br></br>
+
+## Happiness-related scores correlation
+<br></br>
+
+### Worldwide
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+library(corrgram)
+
+corrgram(cor_2, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores Worldwide')
+
+```
+
+It is interesting to notice that apparently, Happiness score was **more strongly and positively related to GDP per capita, Life expectancy and Family** (all above 0.70),less strongly related to Freedom and perception of corruption. And the **least correlated score was Generosity**.
+
+However, this pattern might change among world's main regions.
+Since there is a lot of countries, I investigated the 10 Regions given
+by the dataset.
+
+Although slightly tedious, results show some interesting differences among the regions.
+
+Let's check one correlogram per each of the 10 regions.
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Eastern Asia
+easia <- subset(h_2016_norm, Region == "Eastern Asia")
+cor_easia <- cor(easia[,-c(1,2,3,5,6)])
+
+corrgram(cor_easia, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Eastern Asia')
+
+```
+
+In Eastern Asia, GDP per capita stands out among the other scores, considering the
+more positive correlation.
+Freedom, Family and Generosity are weakly correlated (below 0%).
+
+Let's check other parts of Asia.
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Southeastern Asia
+soeas <- subset(h_2016_norm, Region == "Southeastern Asia")
+cor_soeas <- cor(soeas[,-c(1,2,3,5,6)])
+
+corrgram(cor_soeas, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Southeastern Asia')
+
+```
+
+Also, GDP plays the most important role in correlating to Happiness Score.
+Freedom and Generosity are weakly correlated (below 0%).
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Southern Asia
+srtas <- subset(h_2016_norm, Region == "Southern Asia")
+cor_srtas <- cor(srtas[,-c(1,2,3,5,6)])
+
+corrgram(cor_srtas, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Southern Asia')
+
+```
+
+In Southern Asia, interestingly, Corruption perception is the most related to Happines Score.
+Freedom and Generosity are weakly correlated (below 10%).
+
+<br></br>
+
+Now moving to Africa.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Middle East and Northern Africa
+menaf <- subset(h_2016_norm, Region == "Middle East and Northern Africa")
+cor_menaf <- cor(menaf[,-c(1,2,3,5,6)])
+
+corrgram(cor_menaf, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Middle East and Northern Africa')
+
+```
+Now for the first time in this analysis, Family appear as the most correlated. GDP comes right after.
+Generosity is the least correlated (below 0).
+
+<br></br>
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Sub-Saharan Africa
+ssafr <- subset(h_2016_norm, Region == "Sub-Saharan Africa")
+cor_ssafr <- cor(ssafr[,-c(1,2,3,5,6)])
+
+corrgram(cor_ssafr, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Sub-Saharan Africa')
+
+```
+
+None of the factor present stronger correlation values (above 50%).
+Freedom presented the strongest correlation, with Family and GDP right after.
+Corruption perception was the least correlated to Happiness score.
+
+<br></br>
+
+Now Southern portion of America.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Latin America and Caribbean
+lamca <- subset(h_2016_norm, Region == "Latin America and Caribbean")
+cor_lamca <- cor(lamca[,-c(1,2,3,5,6)])
+
+corrgram(cor_lamca, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Latin America and Caribbean')
+
+```
+
+In Southern America, GDP also appears with the strongest correlation.
+Health appears right after.
+Generosity was the least correlated (below 0).
+
+
+<br></br>
+
+Moving to Europe.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Western Europe
+wseur <- subset(h_2016_norm, Region == "Western Europe")
+cor_wseur <- cor(wseur[,-c(1,2,3,5,6)])
+
+corrgram(cor_wseur, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Western Europe')
+
+```
+
+Corruption perception was the strongest correlation, and very close to Family and Freedom.
+Health-related factor was the weakest correlation (almost 0).
+
+<br></br>
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Central and Eastern Europe
+ceeur <- subset(h_2016_norm, Region == "Central and Eastern Europe")
+cor_ceeur <- cor(ceeur[,-c(1,2,3,5,6)])
+
+corrgram(cor_ceeur, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Central and Eastern Europe')
+
+```
+
+In Eastern Europe, the strongest correlation was with Family.
+Health, generosity and corruption perception were the weakest correlations.
+
+<br></br>
+
+Now parts of Oceania.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Australia and New Zealand
+ausnz <- subset(h_2016_norm, Region == "Australia and New Zealand")
+cor_ausnz <- cor(ausnz[,-c(1,2,3,5,6)])
+
+corrgram(cor_ausnz, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in Australia and New Zealand')
+
+```
+
+<br></br>
+
+And finally the northern portion of America.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# North America
+noamr <- subset(h_2016_norm, Region == "North America")
+cor_noamr <- cor(noamr[,-c(1,2,3,5,6)])
+
+corrgram(cor_noamr, order=T, lower.panel=panel.shade,
+         upper.panel=panel.cor, text.panel=panel.txt,
+         main = 'Happiness-related scores in North America')
+
+```
+<br></br>
+    
+Correlograms are weird for Oceania countries and North America.
+That may be relate to these subsets of data having only two countries in each.
+
+But these correlograms helped to begin to see some differences among the countries.
+
+
+<br></br>
+
+#### Grouping the data
+
+##### Cluster Analysis
+
+
+In order to "divide" more the countries and regions looking for some
+similarities, I'll use a partitioning clustering.
+
+Using K-means clustering and finding the best number of clusters, it is
+possible to look at countries and regions in a slightly different manner.
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# i'll create a df with the regions as rownames
+
+df_to_cluster <- h_2016_norm[,-c(2,3,5,6)]
+row.names(df_to_cluster) <- df_to_cluster$Country
+df_to_cluster[1] <- NULL
+
+
+# number of clusters and k-means clustering
+
+library(factoextra)
+library(ggsci)
+
+fviz_nbclust(df_to_cluster, kmeans,
+             method = "gap_stat")
+
+km.res <- kmeans(df_to_cluster, 3, nstart = 25)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=14, fig.height=12}
+
+# Visualize
+fviz_cluster(km.res, data = df_to_cluster,
+             ellipse.type = "convex",
+             palette = "nrc",
+             repel = TRUE,
+             ggtheme = theme_minimal())
+
+```
+
+<br></br>
+
+So, working with the recommended 3 clusters, it is normal to wonder wether
+regions' countries fall entirely (or at least its majority) into each cluster.
+
+Let's investigate regions and countries within each cluster.
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=14, fig.height=12}
+
+# transform cluster results into a df
+df <- as.data.frame(km.res$cluster)
+
+# return rownmes to column
+df <-
+    df %>%
+    rownames_to_column(var = "Country")
+
+# join these to add the cluster assignment into my main df
+
+h_2016_cl <-
+    h_2016_norm %>%
+    left_join(df)
+
+h_2016_cl %>%
+    arrange(desc(H_Score)) %>%
+    ggplot(aes(x = Country, y = H_Rank, size = H_Score, fill = Region))+
+    geom_point(alpha = 0.6, shape = 21, color = 'black')+
+    scale_size(range = c(.1, 20), name = 'Happiness Score')+
+    facet_grid(.~km.res$cluster, scales = 'free_x')+
+    #scale_y_continuous(limits=c(157,0))+
+    scale_fill_npg() +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 70, vjust = 0.5))+
+    theme(legend.position="bottom")+
+    guides(fill=guide_legend(nrow=4,byrow=TRUE))+
+    ylab("Happiness Rank")+
+    xlab('Country')
+    #xlab("Gdp per Capita")
+
+```
+
+Although not quite there yet, we can also get some useful insights from this plot.
+
+Cluster 1 has countries with the highest Happines Ranked countries, and is also the cluster with less countries.
+
+Cluster 2 apparentely has the greater amount of countries and a variety of regions.
+Here, the Happiness Rank of countries shows the higher dispersion: countries in the top ranked, and countries at the bottom of the rank.
+
+Cluster 3 has countries wich appear as the lowest ranked in the Happines Rank.
+
+But is still difficult to say which regions are in which clusters.
+
+<br></br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=14, fig.height=12}
+
+# number and proportion of clusters to total countries
+cn_per_cl <- as.data.frame(km.res$size)
+
+# proportion (related to total number of countries)
+pr_per_cl <- as.data.frame(km.res$size/157 * 100)
+
+# number of countries per region
+# (use this to the porportion of countries' region in each cluster)
+c_per_rg <-
+    h_2016_cl %>%
+    group_by(Region)%>%
+    summarise(n_ct_per_rg = n())
+
+# number of countries (and their regions) within each cluster
+c_per_cl <-
+    h_2016_cl %>%
+    group_by(Region, km.res$cluster) %>%
+    # number of countries of regions within each cluster
+    summarise(n_ctreg_per_cl = n())
+
+# and finally, for each cluster, the proportion of a region's countries in it!
+cl_reg_prop <-
+    c_per_cl %>%
+    left_join(c_per_rg) %>%
+    mutate(proportion = (n_ctreg_per_cl / n_ct_per_rg) *100)
+
+# Now let's visualize this
+cl_reg_prop$proportion <- round(cl_reg_prop$proportion, digits = 2)
+
+cl_reg_prop$Region <- factor(cl_reg_prop$Region,
+                             levels = c('Australia and New Zealand',
+                                        'North America', 'Western Europe',
+                                        'Central and Eastern Europe',
+                                        'Latin America and Caribbean',
+                                        'Eastern Asia', 'Middle East and Northern Africa',
+                                        'Southeastern Asia', 'Southern Asia',
+                                        'Sub-Saharan Africa'))
+
+cl_reg_prop %>%
+    ggplot(aes(x = Region, y = proportion, fill = as.factor(`km.res$cluster`), label = proportion))+
+    geom_col(color = 'black', width = .7)+
+    geom_text(size = 3, position = position_stack(vjust = 0.5))+
+    scale_fill_npg(name = 'Cluster')+
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 70, vjust = 0.5))+
+    xlab("Main world region")+
+    ylab("Proportion of countries in clusters across regions (%)")
+
+
+```
+
+
+<br></br>
+
+(Partial) conclusions.
+
+Since a regression analysis within a year of data does not seem to be a coherent option, I focused on exploring the data and trying to understand differences among regions.
+
+It became clear that main world regions are different among each other (of course, even countries are different among each other), and they perceive and value happiness in different manners.
+
+Each country's history probably play a role in this.
+
+Fewer countries appear as the highest on the Happines-Rank.
+These are also, majoritarily, the richest countries (North America, Australia, New Zealand,
+Western Europe).
+
+The lowest-ranked countries in terms of happiness are formed in its majority by the poorest countries.
+
+I intend to continue the analysis, with further statistics comparing years.
