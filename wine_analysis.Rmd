@@ -1,0 +1,418 @@
+---
+title: "wine_analysis"
+author: "Maria Carolina da S. Andrea"
+date: "20 de abril de 2020"
+output: html_document
+---
+
+<br></br>
+
+# Wine Quality Data Set
+
+<br></br>
+
+#### I analysed the Wine Quality Data Set, obtained from the UCI Machine Learning Repository
+
+Data publicly avaliable at: http://archive.ics.uci.edu/ml/datasets/Wine+Quality
+
+Information avaialble at the webpage:
+The two available datasets are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult: [Cortez et al., 2009]. Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
+
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties.
+In Decision Support Systems, Elsevier, 47(4):547-553, 2009.
+
+<br></br>
+
+Attribute Information:
+
+For more information, read [Cortez et al., 2009].
+Input variables (based on physicochemical tests):
+
+1 - fixed acidity
+
+2 - volatile acidity
+
+3 - citric acid
+
+4 - residual sugar
+
+5 - chlorides
+
+6 - free sulfur dioxide
+
+7 - total sulfur dioxide
+
+8 - density
+
+9 - pH
+
+10 - sulphates
+
+11 - alcohol
+
+Output variable (based on sensory data):
+12 - quality (score between 0 and 10)
+
+<br></br>
+
+First I analysed the red wine data set. Since they're different, analyzes were
+made separately.
+
+Also, a few analysis may change from red to white wine datasets, as I gained
+a little more familiarity with the data and the process.
+
+<br></br>
+
+# 1. Red wine
+
+<br></br>
+
+My approach here was to explory data, adjust a regression model to understand more
+about the data, and then apply machine learning algorithms.
+
+### 1.1 Import and check data
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+
+# Import data
+red_wine <- read.csv2('winequality-red.csv')
+
+# Check data
+glimpse(red_wine)
+
+```
+
+<br></br>
+
+### 1.2 Exploratory Analysis
+
+Make sure all variables are numeric, check summary statistics and visualize outcome.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# I see that all variables are factors, but they need to be numeric for the
+# summary statistics and multiple regression
+# to transform factor into numeric, they need to first be a character
+# (otherwise it will give me the factor levels)
+df1 <- lapply(red_wine, as.character)
+df2 <- lapply(df1, as.numeric)
+rw <- as.data.frame(df2)
+
+# summary
+rw %>%
+    summary()
+
+# I can see that most of samples were perceived as having average quality, in general
+rw %>%
+    ggplot(aes(quality))+
+    geom_histogram(fill = 'grey70', color = 'blue', stat = 'count', width = 0.7)+
+    theme_classic()+
+    xlab('Perceived quality')+
+    ylab('Frequency (count of samples)')+
+    theme_classic()+
+    ggtitle('Quality scores of red wine sample')
+
+
+```
+
+The majority of red wines were classified as having average quality: 5 or 6 in scores.
+
+<br></br>
+
+##### **Correlation analysis**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+library(ggcorrplot)
+
+cor_rw <- round(cor(rw[1:12]),1)
+head(cor_rw)
+
+ggcorrplot(cor(rw[1:12]), p.mat = cor_pmat(rw[1:12]),
+           hc.order=TRUE, type='lower', lab = TRUE)
+
+```
+
+In the correlation plot, the 'x' indicate that there are no correlation
+significance level (non=significant correlation).
+
+We can see that the variables **most correlated with quality are alcohol and volatile
+acidity**.
+
+There is indications of variables correlated between each other, which may 
+result in eliminating some after analysing the regression.
+
+<br></br>
+
+### 1.3 Regression Analysis
+
+First, standardize (scale) data and fit multiple linear models to test.
+
+The first model includes all variables.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+rw_n <- as.data.frame(scale(rw[1:11]))
+rw_n <- cbind(rw_n, quality = rw$quality)
+
+# let's try a 1st approach with all regressors
+mlr <- lm(quality ~ ., data=rw_n)
+summary(mlr)
+
+```
+
+I can see that some predictors are not necessary (not significant)
+fixed.acidity, citric.acid, residual.sugar, density.
+
+<br></br>
+
+Fitting a model without those variables:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+mlr2 <- lm(quality ~ volatile.acidity + chlorides + free.sulfur.dioxide +
+               total.sulfur.dioxide + pH + sulphates + alcohol, data = rw_n)
+summary(mlr2)
+
+```
+
+Interpretation: 
+
+Ex: For a change of a unit of volatile.acidity, we gave a decrease of -0.2 on the quality score
+But remember that data here is standardized!
+For modeling purposes, I could already **exclude 4 predictors**.
+
+<br></br>
+
+But let's go back and go further on **model nesting testing**
+
+I'll add one variable at a time, and perform an ANOVA for all models.
+
+Then I'll plot residuals, that give me an overview about (poor) model fit.
+
+```{r  message=FALSE, warning=FALSE}
+
+fit1 <- lm(quality ~ volatile.acidity, data = rw_n)
+fit2 <- lm(quality ~ volatile.acidity + chlorides, data = rw_n)
+fit3 <- lm(quality ~ volatile.acidity + chlorides + alcohol, data = rw_n)
+fit4 <- lm(quality ~ volatile.acidity + chlorides + alcohol + sulphates, data = rw_n)
+fit5 <- lm(quality ~ volatile.acidity + chlorides + alcohol + sulphates +
+               total.sulfur.dioxide, data = rw_n)
+fit6 <- lm(quality ~ volatile.acidity + chlorides + alcohol + sulphates +
+               total.sulfur.dioxide + pH, data = rw_n)
+fit7 <- lm(quality ~ volatile.acidity + chlorides + alcohol + sulphates +
+               total.sulfur.dioxide + pH + free.sulfur.dioxide, data = rw_n)
+
+anova(fit1, fit2, fit3, fit4, fit5, fit6, fit7)
+
+plot(fit6)
+
+```
+
+Fit 7 was least relevant --> due to addition of free.sulfur.oxide.
+
+For simplification and learning purposes, I'll choose **fit 6: 6 predictors**.
+
+Residual plots doesn't look much better though.
+
+Keep in mind that modeling multiple linear relationships is hard!
+
+In the first residual plot: since I'm treating the outcome as simply numeric, it predicts unrealist scores, such as 4.5, 5.5, 6.5, ... but I also can't treat it as a factor.
+
+
+<br></br>
+
+Incorporating results from multiple linear regression:
+
+Using the intepretation of a simple regression modeling technique,
+I'll re-create the database (excluding the variables that did not
+presented relevance).
+
+I could leave that for the M.L. algorithm, depending on the algorithm, features
+are automatically selected.
+
+But the models I chose do not have that.
+
+I also need to ensure that my 'quality' outcome is understood as a factor,
+I'm performing classification algorithms.
+
+Outcome (quality) levels:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# red wine standardized and reduced (in variables)
+vars <- c('volatile.acidity', 'chlorides', 'alcohol', 'sulphates',
+          'total.sulfur.dioxide', 'pH', 'quality')
+rw_r <- rw_n[,vars]
+
+# I'll need the outcome as a factor to perform the classification modeling of ML
+rw_r$quality <- as.factor(rw_r$quality)
+levels(rw_r$quality)
+
+```
+
+<br></br>
+
+### 1.4 Model Prediction through Machine Learning - Classification
+
+Basic necessary steps:
+
+1-Pre processing
+
+2-Data splitting (partition, resample)
+
+3-Train/test functions (train, predict)
+
+4-Model comparison (confusion matrix)
+
+<br></br>
+
+Split data into training/test set and apply algorithms.
+
+```{r message=FALSE, warning=FALSE}
+
+library(caret)
+
+inTrain <- createDataPartition(y=rw_r$quality, p=0.75, list = FALSE)
+
+rw_train <- rw_r[inTrain,]
+rw_test <- rw_r[-inTrain,]
+
+```
+
+<br></br>
+
+Pre process + train
+
+#### **Support Vector Machines Algorithm - SVM (with gaussian kernel)**
+
++ This is a **supervised learning algorithm** common to be used in classification problems.
+
++ A non-linear kernel (as used here), has the ability to 'enlarge' features space in order to accomodate a **non-linear boundary between the classes** --> the kernels then transform our data to pass a linear **hyper-plane and classify the data**.
+
+('number'= holds the number of resampling iterations;
+'repeats' =  contains the sets to compute for our repeated cross-validation)
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+set.seed(125)
+
+ctrl1 <- trainControl(method = 'repeatedcv', number=10, repeats=5)
+
+model_rw2 <- train(quality ~ ., data=rw_train,
+                   #preProcess=c('center','scale'),
+                   trControl=ctrl1,
+                   method='svmRadial')
+```
+
+```{r message=FALSE, warning=FALSE}
+
+model_rw2
+
+```
+
+<br></br>
+
+#### **Neural network for classification**
+
++ Not easy to understand this concept, and every time I read about it and practice, I gain some new understanding.
+
++ The most common is the **multilayer perceptron (deep neural networks)**, which has more than one 'hidden' layer --> these layers are trained to represent the similarities between entities in order to generate recommendations, trying to achieve some sort of universality. 
+
++ Also a **supervised learning algorithm**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+set.seed(125)
+
+model_rw3 <- train(quality ~ ., data=rw_train,
+                   #preProcess=c('center','scale'),
+                   trControl=ctrl1,
+                   method='nnet')
+```
+
+```{r message=FALSE, warning=FALSE}
+
+model_rw3
+
+```
+
+<br></br>
+
++ Exploring and Comparing Resampling Distributions between models
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+resamps <- resamples(list(SVM = model_rw2,
+                          NNC = model_rw3))
+resamps
+
+# Scatter plot matrix of accuracy for both models
+splom(resamps)
+
+```
+
+<br></br>
+
++ Make inferences on the differences between models: 
+
+Compute the differences, then use a simple t-test to evaluate
+the null hypothesis that there is no difference between models.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+difValues <- diff(resamps)
+difValues
+summary(difValues)
+
+bwplot(difValues, layout = c(3, 1))
+
+```
+
+<br></br>
+
++ Check variable importance for used models.
+
+Important to remember that it gives importances for each class of my factor outcome.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+plot(varImp(object=model_rw2),main="SVM(gaussian) - Variable Importance")
+varImp(model_rw2)
+
+varImp(model_rw3)
+
+```
+
+I can see that in general, volatile acidity was an important variable according to
+both algorithms (Plot presented only for SVM).
+
+<br></br>
+
+**Predictions and Metrics of Classification**
+
+```{r message=FALSE, warning=FALSE}
+
+# SVM gaussian
+predict_svgg <- predict(model_rw2, newdata = rw_test)
+
+
+# NN
+predict_nn <- predict (model_rw3, newdata = rw_test)
+
+
+# Check
+
+confusionMatrix(table(predict_svgg, rw_test$quality))
+confusionMatrix(table(predict_nn, rw_test$quality))
+
+```
+
+Models (SVM and NN) seem to be very close in terms of performance, 
+however **SVM performed slightly better.**
+
+Model performance would probably benefit from a further processing, which
+I have not performed yet.
+
