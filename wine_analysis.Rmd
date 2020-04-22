@@ -74,6 +74,8 @@ about the data, and then apply machine learning algorithms.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
+# assuming you downloaded the data (small dataset) and have on your PC. Here with the same name as downloaded.
+
 library(tidyverse)
 
 # Import data
